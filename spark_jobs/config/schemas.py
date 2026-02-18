@@ -139,3 +139,90 @@ SILVER_GEOLOCATION_SCHEMA = StructType([
     StructField("_is_valid", BooleanType(), False),
     StructField("_source_file", StringType(), False)
 ])
+# =============================================================================
+# ORDER PAYMENTS
+# =============================================================================
+BRONZE_ORDER_PAYMENTS_SCHEMA = StructType([
+    StructField("order_id", StringType(), True),
+    StructField("payment_sequential", StringType(), True),
+    StructField("payment_type", StringType(), True),
+    StructField("payment_installments", StringType(), True),
+    StructField("payment_value", StringType(), True),
+])
+
+SILVER_ORDER_PAYMENTS_SCHEMA = StructType([
+    StructField("order_id", StringType(), False),
+    StructField("payment_sequential", IntegerType(), False),
+    StructField("payment_type", StringType(), False),
+    StructField("payment_installments", IntegerType(), False),
+    StructField("payment_value", DoubleType(), False),
+    # Metadata
+    StructField("_cleaned_at", TimestampType(), False),
+    StructField("_is_valid", BooleanType(), False),
+    StructField("_source_file", StringType(), False)
+])
+
+# =============================================================================
+# ORDER REVIEWS
+# =============================================================================
+BRONZE_ORDER_REVIEWS_SCHEMA = StructType([
+    StructField("review_id", StringType(), True),
+    StructField("order_id", StringType(), True),
+    StructField("review_score", StringType(), True),
+    StructField("review_comment_title", StringType(), True),
+    StructField("review_comment_message", StringType(), True),
+    StructField("review_creation_date", StringType(), True),
+    StructField("review_answer_timestamp", StringType(), True),
+])
+
+SILVER_ORDER_REVIEWS_SCHEMA = StructType([
+    StructField("review_id", StringType(), False),
+    StructField("order_id", StringType(), False),
+    StructField("review_score", IntegerType(), False),
+    StructField("review_comment_title", StringType(), True),
+    StructField("review_comment_message", StringType(), True),
+    StructField("review_creation_date", TimestampType(), False),
+    StructField("review_answer_timestamp", TimestampType(), True),
+    # Metadata
+    StructField("_cleaned_at", TimestampType(), False),
+    StructField("_is_valid", BooleanType(), False),
+    StructField("_source_file", StringType(), False)
+])
+
+# =============================================================================
+# SELLERS
+# =============================================================================
+BRONZE_SELLERS_SCHEMA = StructType([
+    StructField("seller_id", StringType(), True),
+    StructField("seller_zip_code_prefix", StringType(), True),
+    StructField("seller_city", StringType(), True),
+    StructField("seller_state", StringType(), True),
+])
+
+SILVER_SELLERS_SCHEMA = StructType([
+    StructField("seller_id", StringType(), False),
+    StructField("seller_zip_code_prefix", IntegerType(), False),
+    StructField("seller_city", StringType(), False),
+    StructField("seller_state", StringType(), False),
+    # Metadata
+    StructField("_cleaned_at", TimestampType(), False),
+    StructField("_is_valid", BooleanType(), False),
+    StructField("_source_file", StringType(), False)
+])
+
+# =============================================================================
+# CATEGORY TRANSLATION
+# =============================================================================
+BRONZE_CATEGORY_TRANSLATION_SCHEMA = StructType([
+    StructField("product_category_name", StringType(), True),
+    StructField("product_category_name_english", StringType(), True),
+])
+
+SILVER_CATEGORY_TRANSLATION_SCHEMA = StructType([
+    StructField("product_category_name", StringType(), False),
+    StructField("product_category_name_english", StringType(), False),
+    # Metadata
+    StructField("_cleaned_at", TimestampType(), False),
+    StructField("_is_valid", BooleanType(), False),
+    StructField("_source_file", StringType(), False)
+])
