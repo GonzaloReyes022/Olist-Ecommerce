@@ -1,0 +1,244 @@
+
+# ¿Qué es version 3.8?
+# La versión de sintaxis de Docker Compose
+# 3.8 es moderna y estable
+
+# Redes - para que los contenedores se comuniquen
+networks:
+  airflow-spark-network:
+    driver: bridge
+    # Bridge = red virtual entre contenedores
+
+# Volúmenes - para persistir datos
+volumes:
+  postgres-db-volume:  # Base de datos de Airflow
+  airflow-logs:        # Logs de Airflow
+  spark-data:          # Datos procesados por Spark
+
+services:
+  # ==========================================
+  # POSTGRES - Base de datos para Airflow
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    # ¿Por qué Postgres?
+    # Alpine es de las mas livianas, sin un monton de herramieintas
+    # pero para este caso esta bien
+    # Airflow necesita una BD para guardar metadata
+    # (estado de DAGs, historial, logs, etc.)
+    
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      # Persiste la BD incluso si el contenedor se elimina
+    
+    networks:
+      - airflow-spark-network
+    
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 10s
+      retries: 5
+      # ¿Por qué healthcheck?
+      # Para que otros servicios esperen a que Postgres esté listo
+      # Airflow no puede arrancar si la base de datos no está lista
+
+  # ==========================================
+  # AIRFLOW WEBSERVER - Interfaz web
+  # ==========================================
+  airflow-webserver:
+    build:
+      context: ./docker/airflow
+      dockerfile: Dockerfile
+    
+    command: webserver
+    # Inicia el servidor web de Airflow
+    
+    ports:
+      - "8080:8080"
+      # Puerto 8080 en tu PC → Puerto 8080 en contenedor
+      # Accedes en: http://localhost:8080
+    
+    environment:
+      # Variables de entorno
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      # LocalExecutor = ejecuta tareas localmente
+      # (Para producción usarías CeleryExecutor)
+      
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      # Conexión a Postgres
+      
+      AIRFLOW__CORE__FERNET_KEY: 'e1dto3BJvbpGIofATVSZkn2l73fjwykZfgWfVT3y6Kc='
+      # Para encriptar contraseñas en Airflow
+      # Genera con: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+      
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      # DAGs nuevos empiezan pausados (seguridad)
+      
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      # No cargar DAGs de ejemplo
+      
+      AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
+      # Autenticación básica
+      
+      # Variables personalizadas
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+      SNOWFLAKE_USER: ${SNOWFLAKE_USER}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
+      # Se cargan desde archivo .env
+    
+    volumes:
+      - ./dags:/opt/airflow/dags
+      # Monta carpeta dags → Airflow la lee automáticamente
+      
+      - ./spark_jobs:/opt/spark-jobs
+      # Para que Airflow pueda ejecutar los jobs de Spark
+      
+      - airflow-logs:/opt/airflow/logs
+      # Logs persistentes
+      
+      - ./data:/opt/data
+      # Datos locales
+      
+      - ./config:/opt/config
+      # Archivos de configuración
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Espera a que Postgres esté sano
+      airflow-init:
+        condition: service_completed_successfully
+      # Espera a que airflow-init termine
+    
+    networks:
+      - airflow-spark-network
+    
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # ==========================================
+  # AIRFLOW SCHEDULER - Programa tareas
+  # ==========================================
+  airflow-scheduler:
+    build:
+      context: ./docker/airflow
+      dockerfile: Dockerfile
+    
+    command: scheduler
+    # ¿Qué hace?
+    # Monitorea DAGs y dispara tareas según el schedule
+    
+    environment:
+      # Mismas variables que webserver
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: 'e1dto3BJvbpGIofATVSZkn2l73fjwykZfgWfVT3y6Kc='
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+      SNOWFLAKE_USER: ${SNOWFLAKE_USER}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
+    
+    volumes:
+      # Mismos volúmenes que webserver
+      - ./dags:/opt/airflow/dags
+      - ./spark_jobs:/opt/spark-jobs
+      - airflow-logs:/opt/airflow/logs
+      - ./data:/opt/data
+      - ./config:/opt/config
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+    
+    networks:
+      - airflow-spark-network
+
+  # ==========================================
+  # AIRFLOW INIT - Inicializa Airflow
+  # ==========================================
+  airflow-init:
+    build:
+      context: ./docker/airflow
+      dockerfile: Dockerfile
+    
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        # Script de inicialización
+        airflow db migrate
+        # Crea/actualiza tablas en Postgres
+        
+        airflow users create \
+          --username admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com \
+          --password admin
+        # Crea usuario admin
+        # Usuario: admin, Password: admin
+        
+        echo "Airflow inicializado correctamente"
+    
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: 'e1dto3BJvbpGIofATVSZkn2l73fjwykZfgWfVT3y6Kc='
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+    
+    networks:
+      - airflow-spark-network
+    
+    restart: on-failure
+    # Se ejecuta una vez y termina
+
+  # ==========================================
+  # SPARK - Procesamiento de datos
+  # ==========================================
+  spark:
+    build:
+      context: ./docker/spark
+      dockerfile: Dockerfile
+    
+    environment:
+      # La imagen oficial no usa SPARK_MODE, se define por el comando
+      SPARK_MASTER_HOST: spark
+      SPARK_MASTER_PORT: 7077
+      
+      # Configuración de recursos (Pyspark los reconoce)
+      SPARK_DRIVER_MEMORY: 2g
+      SPARK_EXECUTOR_MEMORY: 2g
+      
+      # Tus credenciales de Snowflake
+      SNOWFLAKE_ACCOUNT: ${SNOWFLAKE_ACCOUNT}
+      SNOWFLAKE_USER: ${SNOWFLAKE_USER}
+      SNOWFLAKE_PASSWORD: ${SNOWFLAKE_PASSWORD}
+    
+    ports:
+      - "8081:8080"  # Web UI (Oficial usa 8080)
+      - "7077:7077"  # Puerto de comunicación interna
+    
+    volumes:
+      - ./spark_jobs:/opt/spark-jobs
+      - ./data:/opt/data
+      - spark-data:/opt/spark-data
+      - ./config:/opt/config
+    
+    networks:
+      - airflow-spark-network
+    
+    # Comando específico para la imagen oficial de Apache
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master

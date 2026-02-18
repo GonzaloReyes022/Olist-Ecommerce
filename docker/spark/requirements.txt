@@ -1,0 +1,38 @@
+# ==========================================
+# CORE - PySpark viene con la imagen
+# ==========================================
+delta-spark==3.1.0
+# Delta Lake para transacciones ACID en data lakes
+
+# ==========================================
+# SNOWFLAKE
+# ==========================================
+snowflake-connector-python==3.6.0
+# Conector Python a Snowflake (sin Spark)
+
+# ==========================================
+# DATA PROCESSING
+# ==========================================
+pyarrow==14.0.2
+# Formato columnar eficiente para Spark
+
+# ==========================================
+# DATA QUALITY (alternativas ligeras)
+# ==========================================
+# great-expectations==0.18.8  # Comentado: muy pesado
+pandera==0.17.2
+# Alternativa ligera para validación de esquemas
+
+# ==========================================
+# UTILITIES
+# ==========================================
+python-dotenv==1.0.0
+requests==2.31.0
+
+# ==========================================
+# TESTING
+# ==========================================
+pytest==7.4.3
+pytest-spark==0.6.0
+chispa==0.9.4
+# Testing específico para DataFrames Spark
