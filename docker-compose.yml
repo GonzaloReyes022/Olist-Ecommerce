@@ -212,7 +212,7 @@ services:
     build:
       context: ./docker/spark
       dockerfile: Dockerfile
-    
+
     environment:
       # La imagen oficial no usa SPARK_MODE, se define por el comando
       SPARK_MASTER_HOST: spark

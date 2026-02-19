@@ -409,7 +409,21 @@ if __name__ == "__main__":
             file_path = str(config.paths.data_raw / filename)
             
             # Ejecutamos
-            ingester.run(file_path)
+            result = ingester.run(file_path)
+
+             # Mostrar resultado
+            print("\n" + "=" * 60)
+            print("RESULTADO:")
+            print("=" * 60)
+            for key, value in result.items():
+                print(f"  {key}: {value}")
+            # Mostrar preview de los datos
+            print("\n" + "=" * 60)
+            print("PREVIEW DE DATOS EN BRONZE:")
+            print("=" * 60)
+            df_bronze = spark.read.format("delta").load(result["bronze_path"])
+            df_bronze.show(5, truncate=False)
+            print(f"Schema: {df_bronze.schema.simpleString()}")
                         
         except Exception as e:
             print(f"Error procesando {filename}: {str(e)}")

@@ -31,7 +31,19 @@ RUN pip3 install --no-cache-dir -r /opt/requirements.txt
 RUN mkdir -p /opt/spark_jobs /opt/logs && chown spark:spark /opt/logs
 WORKDIR /opt/spark_jobs
 
-USER spark
-
 # Configurar PYTHONPATH: /opt para que Python resuelva "from spark_jobs.xxx"
 ENV PYTHONPATH="/opt:${SPARK_HOME}/python:${SPARK_HOME}/python/lib/py4j-0.10.9.7-src.zip:${PYTHONPATH}"
+
+# Entrypoint: corre como root para ajustar permisos de bind mounts,
+# luego cambia a user spark con gosu antes de ejecutar el comando.
+# Necesario porque los bind mounts heredan UID del host (1000),
+# y el user spark (UID 185) no puede escribir en ellos.
+COPY entrypoint-spark.sh /opt/entrypoint-spark.sh
+RUN chmod +x /opt/entrypoint-spark.sh
+ENTRYPOINT ["/opt/entrypoint-spark.sh"]
+
+#en entrypoint se sale de root y se vuelve a modo usuario spark!!
+#Se intento dar permisos a user de spark a 1000
+#sin embargo salto error pq Hadoop/Spark necesita resolver el nombre de usuario desde el UID, y UID 1000 no existe 
+#dentro del contenedor (solo existen root y spark). Por eso invalid null input: name.
+# en vez de cambiar el user del proceso, hay que darle permisos al grupo en el Dockerfile. 
