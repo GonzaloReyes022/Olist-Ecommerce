@@ -95,7 +95,7 @@ services:
       - ./dags:/opt/airflow/dags
       # Monta carpeta dags → Airflow la lee automáticamente
       
-      - ./spark_jobs:/opt/spark-jobs
+      - ./spark_jobs:/opt/spark_jobs
       # Para que Airflow pueda ejecutar los jobs de Spark
       
       - airflow-logs:/opt/airflow/logs
@@ -148,7 +148,7 @@ services:
     volumes:
       # Mismos volúmenes que webserver
       - ./dags:/opt/airflow/dags
-      - ./spark_jobs:/opt/spark-jobs
+      - ./spark_jobs:/opt/spark_jobs
       - airflow-logs:/opt/airflow/logs
       - ./data:/opt/data
       - ./config:/opt/config
@@ -232,7 +232,7 @@ services:
       - "7077:7077"  # Puerto de comunicación interna
     
     volumes:
-      - ./spark_jobs:/opt/spark-jobs
+      - ./spark_jobs:/opt/spark_jobs
       - ./data:/opt/data
       - spark-data:/opt/spark-data
       - ./config:/opt/config

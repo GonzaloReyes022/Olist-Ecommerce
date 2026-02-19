@@ -58,7 +58,7 @@ def get_spark_session(
     spark = configure_spark_with_delta_pip(builder).getOrCreate()
 
     #configurar nivel logs
-    builder.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("WARN")
     logger.info(f"SparkSession creada: {app_name}")
     logger.debug(f"Configuración: {spark_config}")
 

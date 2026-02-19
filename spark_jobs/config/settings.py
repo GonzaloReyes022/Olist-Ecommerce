@@ -20,7 +20,7 @@ class PathConfig:
     delta_silver : Path =field(init=False)
     delta_gold : Path =field(init=False)
 
-    def _post_init_(self):
+    def __post_init__(self):
         self.data_raw = self.root / "data" / "raw"
         self.delta_bronze = self.root / "data" / "delta" / "bronze"
         self.delta_silver = self.root / "data" / "delta" / "silver"
