@@ -226,3 +226,5 @@ SILVER_CATEGORY_TRANSLATION_SCHEMA = StructType([
     StructField("_is_valid", BooleanType(), False),
     StructField("_source_file", StringType(), False)
 ])
+
+VALID_ORDER_STATUSES = ["delivered", "shipped", "canceled", "unavailable", "invoiced", "processing", "created", "approved"]
