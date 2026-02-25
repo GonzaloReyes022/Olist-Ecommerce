@@ -250,11 +250,19 @@ class AggCustomerLTV(BaseAggTable):
 
         logger.info(f"LTV percentiles — p25: {p25:.2f}, p75: {p75:.2f}")
 
+        # Por qué el isNull explícito:
+        # En Spark, NULL >= cualquier_valor → NULL (no True ni False).
+        # La cadena when().when().otherwise() solo activa otherwise() cuando
+        # todas las condiciones son False. Si la condición es NULL, Spark la
+        # trata como "no coincidió" y avanza — pero algunas versiones de Spark
+        # no garantizan que otherwise() se active para NULLs en todas las configs.
+        # El isNull explícito hace el comportamiento determinista.
         df = df.withColumn(
             "ltv_segment",
-            when(col("monetary") >= p75, "High")
-            .when(col("monetary") >= p25, "Medium")
-            .otherwise("Low")
+            when(col("monetary").isNull(), lit("Low"))
+            .when(col("monetary") >= p75, lit("High"))
+            .when(col("monetary") >= p25, lit("Medium"))
+            .otherwise(lit("Low"))
         )
 
         return df.withColumn("_created_at", current_timestamp())
