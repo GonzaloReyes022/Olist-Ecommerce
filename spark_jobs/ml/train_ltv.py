@@ -65,7 +65,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder, StandardScaler
 from sklearn.experimental import enable_halving_search_cv  # noqa: F401 — requerido en sklearn < 2.0
-from sklearn.model_selection import StratifiedKFold, HalvingRandomSearchCV, train_test_split
+from sklearn.model_selection import StratifiedKFold, HalvingRandomSearchCV, train_test_split # type: ignore
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 from xgboost import XGBClassifier
 
@@ -250,6 +250,9 @@ def evaluate(pipeline: Pipeline, X_test: pd.DataFrame, y_test: pd.Series) -> flo
     logger.info(f"Accuracy en test: {acc:.4f} ({acc*100:.2f}%)")
 
     print("\n--- Classification Report ---")
+    print("PRESICION: ¿De todos los que predije como positivos, ¿cuántos eran realmente positivos? \n ")
+    print("RECALL: De todos los positivos reales, ¿cuántos detecté?  \n")
+    print("F1 score: Promedio armónico: castiga fuerte cuando una de las dos (precision/recall) es baja")
     print(classification_report(y_test, y_pred, target_names=["Low", "Medium", "High"]))
 
     print("\n--- Confusion Matrix ---")
@@ -364,7 +367,7 @@ def run_ltv_pipeline(spark: SparkSession) -> dict:
 
     print(f"\nDistribución de clases ({len(df):,} clientes):")
     for label, cnt in df[TARGET].value_counts().sort_index().items():
-        print(f"  {LABEL_MAP_INV[int(label)]}: {cnt:,} ({cnt/len(df)*100:.1f}%)")
+        print(f"  {LABEL_MAP_INV[int(label)]}: {cnt:,} ({cnt/len(df)*100:.1f}%)") # type: ignore
 
     # 3. Train/test split — X_test queda COMPLETAMENTE AISLADO hasta evaluate()
     # El preprocessor nunca ve X_test durante el fit → sin data leakage

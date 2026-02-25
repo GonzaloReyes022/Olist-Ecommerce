@@ -243,6 +243,6 @@ with DAG(
     # Pero ml_train igualmente espera a que AMBAS agg y dim terminen antes de
     # continuar hacia end, para que el pipeline quede completo.
 
-    start >> bronze_ingestion >> silver_cleaning >> gold_fact >> [gold_agg, gold_dim]
+    start >> bronze_ingestion >> silver_cleaning >> gold_fact >> [gold_agg, gold_dim]  # type: ignore[operator]
     gold_agg >> ml_train
-    [ml_train, gold_dim] >> end
+    [ml_train, gold_dim] >> end  # type: ignore[operator]
