@@ -8,11 +8,32 @@ FROM apache/airflow:2.8.1-python3.11
 USER root
 
 # Instalamos herramientas necesarias
+# Por qué docker-ce-cli y NO docker.io:
+#   docker.io (paquete Debian) queda en API v1.41, el daemon del host
+#   exige mínimo v1.44+. docker-ce-cli del repo oficial de Docker
+#   siempre viene actualizado y habla la misma API que el daemon.
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    # ¿Por qué gcc/g++? Para compilar librerías Python que lo necesiten
-    && apt-get clean
+        gcc g++ ca-certificates curl gnupg \
+    && install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg \
+       | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && chmod a+r /etc/apt/keyrings/docker.gpg \
+    && echo \
+       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+        https://download.docker.com/linux/debian bookworm stable" \
+       > /etc/apt/sources.list.d/docker.list \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Agregar el usuario airflow al grupo docker
+# Sin esto, el usuario airflow (no-root) no puede usar el socket de Docker
+# El GID 999 es el GID estándar del grupo docker en la mayoría de sistemas Linux.
+# Si enmbargo en el mio es 968: getent group docker | cut -d: -f3
+#
+RUN groupmod -g 968 docker 2>/dev/null || groupadd -g 968 docker && \
+    usermod -aG docker airflow
 
 # Volvemos al usuario airflow (salimos de root)
 USER airflow

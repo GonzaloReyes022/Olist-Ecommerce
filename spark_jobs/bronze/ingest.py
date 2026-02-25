@@ -178,7 +178,7 @@ class BronzeOrdersIngester():
     def write_to_bronze(
         self,
         df: DataFrame,
-        mode: str = "append",
+        mode: str = "overwrite",
     ) -> None:
         """
         Escribe datos a Delta Lake en capa Bronze.

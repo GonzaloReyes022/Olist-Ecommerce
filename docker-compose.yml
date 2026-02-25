@@ -94,19 +94,26 @@ services:
     volumes:
       - ./dags:/opt/airflow/dags
       # Monta carpeta dags → Airflow la lee automáticamente
-      
+
       - ./spark_jobs:/opt/spark_jobs
       # Para que Airflow pueda ejecutar los jobs de Spark
-      
+
       - airflow-logs:/opt/airflow/logs
       # Logs persistentes
-      
+
       - ./data:/opt/data
       # Datos locales
-      
+
       - ./config:/opt/config
       # Archivos de configuración
-    
+
+      - /var/run/docker.sock:/var/run/docker.sock
+      # ¿Por qué montar el socket de Docker?
+      # El DAG usa BashOperator con `docker exec olist-ecommerce-spark-1 spark-submit ...`
+      # Para que Airflow pueda hablarle al daemon de Docker del host,
+      # necesita acceso al socket Unix de Docker.
+      # Sin esto: "Cannot connect to the Docker daemon"
+
     depends_on:
       postgres:
         condition: service_healthy
@@ -114,10 +121,10 @@ services:
       airflow-init:
         condition: service_completed_successfully
       # Espera a que airflow-init termine
-    
+
     networks:
       - airflow-spark-network
-    
+
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 30s
@@ -152,13 +159,15 @@ services:
       - airflow-logs:/opt/airflow/logs
       - ./data:/opt/data
       - ./config:/opt/config
-    
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mismo socket que webserver: el scheduler también lanza tareas
+
     depends_on:
       postgres:
         condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
-    
+
     networks:
       - airflow-spark-network
 

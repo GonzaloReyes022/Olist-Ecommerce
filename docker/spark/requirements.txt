@@ -1,14 +1,14 @@
 # ==========================================
 # CORE - PySpark viene con la imagen
 # ==========================================
-delta-spark==3.1.0
-# Delta Lake para transacciones ACID en data lakes
+# delta-spark se instala por separado en Dockerfile con --no-deps
+# para evitar que pip reinstale pyspark (ya viene bundled en la imagen)
 
 # ==========================================
 # SNOWFLAKE
 # ==========================================
-snowflake-connector-python==3.6.0
-# Conector Python a Snowflake (sin Spark)
+snowflake-connector-python==3.12.0
+# Conector Python a Snowflake (sin Spark) - 3.12.x no pina cryptography <42
 
 # ==========================================
 # DATA PROCESSING
@@ -20,14 +20,26 @@ pyarrow==14.0.2
 # DATA QUALITY (alternativas ligeras)
 # ==========================================
 # great-expectations==0.18.8  # Comentado: muy pesado
-pandera==0.17.2
-# Alternativa ligera para validación de esquemas
+pandera==0.20.4
+# Alternativa ligera para validación de esquemas (0.20.x tiene soporte estable para pandas 2.x)
 
 # ==========================================
 # UTILITIES
 # ==========================================
 python-dotenv==1.0.0
 requests==2.31.0
+
+# ==========================================
+# ML
+# ==========================================
+xgboost==2.0.3
+# Gradient Boosting: modelo principal para predicción LTV
+scikit-learn==1.3.2
+# Preprocessing (LabelEncoder), métricas (classification_report)
+# Nota: 1.4.0+ requiere Python 3.9+; la imagen apache/spark:3.5.1-python3 usa Python 3.8
+pandas==2.0.3
+# Conversión Spark → pandas para entrenamiento XGBoost
+# Nota: 2.1.x requiere Python 3.9+; la imagen apache/spark:3.5.1-python3 usa Python 3.8
 
 # ==========================================
 # TESTING

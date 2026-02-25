@@ -19,3 +19,8 @@ python-dotenv==1.0.0
 
 # Logs estructurados
 python-json-logger==2.0.7
+
+# Proveedor de Docker para Airflow
+# Necesario para que BashOperator pueda usar `docker exec`
+# y para futura integración con DockerOperator si se necesita
+apache-airflow-providers-docker==3.8.0

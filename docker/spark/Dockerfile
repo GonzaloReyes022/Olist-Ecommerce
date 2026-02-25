@@ -27,6 +27,9 @@ RUN curl -L https://repo1.maven.org/maven2/io/delta/delta-spark_2.12/3.1.0/delta
 COPY requirements.txt /opt/requirements.txt
 RUN pip3 install --no-cache-dir -r /opt/requirements.txt
 
+# delta-spark se instala sin deps para no reinstalar pyspark (ya viene en la imagen)
+RUN pip3 install --no-cache-dir --no-deps delta-spark==3.1.0
+
 # Directorio de trabajo y logs
 RUN mkdir -p /opt/spark_jobs /opt/logs && chown spark:spark /opt/logs
 WORKDIR /opt/spark_jobs
